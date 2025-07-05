@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marvelous To-Do App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+    :root {
+      --bg: #f0f0f0;
+      --text: #333;
+      --card: #fff;
+    }
+    .dark {
+      --bg: #121212;
+      --text: #eee;
+      --card: #1e1e1e;
+    }
+    header {
+      background: #4a90e2;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      margin: 1rem auto;
+      padding: 1rem;
+    }
+    .task-card {
+      background: var(--card);
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .task-card.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    input, select, button {
+      padding: 0.5rem;
+      margin: 0.25rem;
+    }
+    button {
+      cursor: pointer;
+    }
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Marvelous To-Do App ✨</h1>
+    <button onclick="toggleTheme()">🌙 / ☀</button>
+  </header>
+  <div class="container">
+    <div>
+      <input type="text" id="taskInput" placeholder="New Task" />
+      <input type="datetime-local" id="dueDate" />
+      <select id="priority">
+        <option value="Low">Low</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="High">High</option>
+      </select>
+      <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div class="filters">
+      <select id="filterStatus" onchange="renderTasks()">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+      </select>
+      <select id="filterPriority" onchange="renderTasks()">
+        <option value="all">All Priorities</option>
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+      </select>
+      <button onclick="sortTasks()">Sort by Date</button>
+    </div>
+
+    <div id="taskList"></div>
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function addTask() {
+      const text = document.getElementById('taskInput').value.trim();
+      const dueDate = document.getElementById('dueDate').value;
+      const priority = document.getElementById('priority').value;
+
+      if (!text) {
+        alert("Task cannot be empty!");
+        return;
+      }
+
+      tasks.push({
+        id: Date.now(),
+        text,
+        dueDate,
+        priority,
+        completed: false
+      });
+
+      saveTasks();
+      renderTasks();
+      document.getElementById('taskInput').value = '';
+      document.getElementById('dueDate').value = '';
+    }
+
+    function toggleComplete(id) {
+      tasks = tasks.map(task =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      );
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      if (confirm("Delete this task?")) {
+        tasks = tasks.filter(task => task.id !== id);
+        saveTasks();
+        renderTasks();
+      }
+    }
+
+    function editTask(id) {
+      const newText = prompt("Edit task text:");
+      if (newText !== null && newText.trim() !== "") {
+        tasks = tasks.map(task =>
+          task.id === id ? { ...task, text: newText.trim() } : task
+        );
+        saveTasks();
+        renderTasks();
+      }
+    }
+
+    function sortTasks() {
+      tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
+
+      const statusFilter = document.getElementById('filterStatus').value;
+      const priorityFilter = document.getElementById('filterPriority').value;
+
+      tasks
+        .filter(task => 
+          (statusFilter === 'all' || (statusFilter === 'completed' ? task.completed : !task.completed)) &&
+          (priorityFilter === 'all' || task.priority === priorityFilter)
+        )
+        .forEach(task => {
+          const div = document.createElement('div');
+          div.className = task-card ${task.completed ? 'completed' : ''};
+          div.innerHTML = `
+            <div>
+              <strong>${task.text}</strong>
+              <div style="font-size:0.85em;">${task.dueDate ? ⏰ ${new Date(task.dueDate).toLocaleString()} : ''} | Priority: ${task.priority}</div>
+            </div>
+            <div>
+              <button onclick="toggleComplete(${task.id})">${task.completed ? 'Undo' : 'Done'}</button>
+              <button onclick="editTask(${task.id})">Edit</button>
+              <button onclick="deleteTask(${task.id})">Delete</button>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    renderTasks();
+  </script>
+</body>
+</html>
